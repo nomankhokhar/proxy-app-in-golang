@@ -8,27 +8,50 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+func CORS() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-ClusterQueueLenght, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
+}
+
 func main() {
 	router := gin.Default()
+	router.Use(CORS())
 
-	router.GET("/ping", pingHandler)
-	router.GET("/allocation", allocationHandler)
-	router.GET("/allocation/:param1/:param2", paramAllocationHandler)
+	router.GET("/allocation/compute", paramAllocationHandler)
 
 	router.Run(":8080")
 }
 
-func pingHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
-}
+func paramAllocationHandler(c *gin.Context) {
 
-func allocationHandler(c *gin.Context) {
+	window := c.Query("window")
+	aggregate := c.Query("aggregate")
+	includeIdle := c.Query("includeIdle")
+	step := c.Query("step")
+	accumulate := c.Query("accumulate")
+
 	client := resty.New()
 
-	// Make a request to the other API
-	resp, err := client.R().Get("http://localhost:3000/allocation/summary")
+	resp, err := client.R().
+		SetQueryParams(map[string]string{
+			"window":      window,
+			"aggregate":   aggregate,
+			"includeIdle": includeIdle,
+			"step":        step,
+			"accumulate":  accumulate,
+		}).
+		Get("http://localhost:9080/model/allocation/compute")
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
@@ -46,40 +69,5 @@ func allocationHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(resp.StatusCode(), result)
-}
-
-func paramAllocationHandler(c *gin.Context) {
-	param1 := c.Param("param1")
-	param2 := c.Param("param2")
-	param3 := c.Param("param3")
-
-	client := resty.New()
-
-	resp, err := client.R().
-		SetQueryParam("param1", param1).
-		SetQueryParam("param2", param2).
-		SetQueryParam("param3", param3).
-		Get("http://localhost:3000/allocation/summary")
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
-			"error":  "Failed to fetch allocation summary",
-		})
-
-		return
-	}
-
-	var result map[string]interface{}
-
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to perase allocation summary response",
-		})
-		return
-	}
-
-	c.JSON(resp.StatusCode(), result)
-
+	c.JSON(http.StatusOK, result)
 }
