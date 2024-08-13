@@ -7,7 +7,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
-  - host: proxy.com  
+  - host: proxy-noman.com  
     http:
       paths:
       - path: /
