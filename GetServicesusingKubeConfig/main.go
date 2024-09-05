@@ -65,10 +65,18 @@ func main() {
 	// Define the namespace and service name.
 	namespace := "default"
 	serviceName := "opencost"
+	ingressName := "opencost-ingress"
 
 	// Fetch the service details from the Kubernetes cluster.
 	fmt.Printf("Fetching service '%s' in namespace '%s'...\n", serviceName, namespace)
 	service, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Fetch the Ingress details from the Kubernetes cluster.
+	fmt.Printf("Fetching ingress '%s' in namespace '%s'...\n", ingressName, namespace)
+	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingressName, metav1.GetOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -84,6 +92,9 @@ func main() {
 			fmt.Println("No external IP address found for OpenCost service")
 		}
 	}
+
+	// Display the URL from the Ingress configuration.
+	fmt.Printf("The URL to access OpenCost is: http://%s\n", ingress.Spec.Rules[0].Host)
 
 	fmt.Println("Program finished successfully.")
 }
