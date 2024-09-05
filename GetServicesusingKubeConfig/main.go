@@ -79,22 +79,25 @@ func main() {
 
 	// Define the namespace and service name.
 	namespace := "default"
-	serviceName := "opencost"
-	ingressName := "opencost-ingress"
+	serviceName := "grafana"
+	ingressName := "ingress-controller"
 
 	// Fetch the service details from the Kubernetes cluster.
 	fmt.Printf("Fetching service '%s' in namespace '%s'...\n", serviceName, namespace)
 
-	// Fetch the Ingress details from the Kubernetes cluster.
-	fmt.Printf("Fetching ingress '%s' in namespace '%s'...\n", ingressName, namespace)
 	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingressName, metav1.GetOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
 
 
+	fmt.Println("Processing Ingress details...")
+	for _, rule := range ingress.Spec.Rules {
+		host := rule.Host
+		fmt.Printf("Ingress URL: %s\n", host)
+	}
+
 	// Display the URL from the Ingress configuration.
-	fmt.Println("Ingress URL: ", ingress.Spec.Rules[0].Host)
 	url := fmt.Sprintf("http://%s/model/allocation/compute?window=7d&aggregate=namespace&includeIdle=true&step=1d&accumulate=false", ingress.Spec.Rules[0].Host)
 	
 
