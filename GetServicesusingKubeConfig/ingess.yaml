@@ -4,10 +4,10 @@ metadata:
   name: opencost-ingress
   namespace: default
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
-    - host: opencost.proxy-noman.me
+    - host: opencost.proxy-noman.me # Replace with your actual domain or subdomain
       http:
         paths:
           - path: /

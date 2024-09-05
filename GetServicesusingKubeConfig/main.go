@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/go-resty/resty/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -36,6 +37,20 @@ func loadKubeConfigFromBytes(content []byte) (*kubernetes.Clientset, error) {
 	}
 
 	return clientset, nil
+}
+
+// checkURL checks if the given URL is reachable.
+func checkURL(url string) error {
+	client := resty.New()
+	resp, err := client.R().Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to GET URL %s: %w", url, err)
+	}
+	if resp.StatusCode() >= 200 && resp.StatusCode() < 300 {
+		fmt.Printf("URL %s is reachable. Status Code: %d\n", url, resp.StatusCode())
+		return nil
+	}
+	return fmt.Errorf("URL %s returned non-success status code: %d", url, resp.StatusCode())
 }
 
 func main() {
@@ -69,10 +84,6 @@ func main() {
 
 	// Fetch the service details from the Kubernetes cluster.
 	fmt.Printf("Fetching service '%s' in namespace '%s'...\n", serviceName, namespace)
-	service, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
 
 	// Fetch the Ingress details from the Kubernetes cluster.
 	fmt.Printf("Fetching ingress '%s' in namespace '%s'...\n", ingressName, namespace)
@@ -81,20 +92,18 @@ func main() {
 		panic(err.Error())
 	}
 
-	// Process and print the external IP or hostname if available.
-	fmt.Println("Processing service ingress details...")
-	for _, ingress := range service.Status.LoadBalancer.Ingress {
-		if ingress.IP != "" {
-			fmt.Printf("The external IP address for OpenCost is: %s\n", ingress.IP)
-		} else if ingress.Hostname != "" {
-			fmt.Printf("The external hostname for OpenCost is: %s\n", ingress.Hostname)
-		} else {
-			fmt.Println("No external IP address found for OpenCost service")
-		}
-	}
 
 	// Display the URL from the Ingress configuration.
-	fmt.Printf("The URL to access OpenCost is: http://%s\n", ingress.Spec.Rules[0].Host)
+	fmt.Println("Ingress URL: ", ingress.Spec.Rules[0].Host)
+	url := fmt.Sprintf("http://%s/model/allocation/compute?window=7d&aggregate=namespace&includeIdle=true&step=1d&accumulate=false", ingress.Spec.Rules[0].Host)
+	
+
+	// Check if the URL is reachable.
+	if err := checkURL(url); err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Println("URL is working fine.")
+	}
 
 	fmt.Println("Program finished successfully.")
 }
