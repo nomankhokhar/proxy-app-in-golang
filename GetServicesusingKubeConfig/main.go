@@ -79,7 +79,7 @@ func main() {
 
 	// Define the namespace and service name.
 	namespace := "default"
-	serviceName := "grafana"
+	serviceName := "opencost"
 	ingressName := "ingress-controller"
 
 	// Fetch the service details from the Kubernetes cluster.
