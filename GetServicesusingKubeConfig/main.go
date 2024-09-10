@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/go-resty/resty/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -39,20 +38,6 @@ func loadKubeConfigFromBytes(content []byte) (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-// checkURL checks if the given URL is reachable.
-func checkURL(url string) error {
-	client := resty.New()
-	resp, err := client.R().Get(url)
-	if err != nil {
-		return fmt.Errorf("failed to GET URL %s: %w", url, err)
-	}
-	if resp.StatusCode() >= 200 && resp.StatusCode() < 300 {
-		fmt.Printf("URL %s is reachable. Status Code: %d\n", url, resp.StatusCode())
-		return nil
-	}
-	return fmt.Errorf("URL %s returned non-success status code: %d", url, resp.StatusCode())
-}
-
 func main() {
 	// Get the kubeconfig file path from the command line argument.
 	kubeconfigPath := *flag.String("kubeconfig", "./nomanProxy.yaml", "absolute path to the kubeconfig file")
@@ -77,35 +62,22 @@ func main() {
 		panic(err.Error())
 	}
 
-	// Define the namespace and service name.
-	namespace := "default"
-	serviceName := "opencost"
-	ingressName := "ingress-controller"
-
-	// Fetch the service details from the Kubernetes cluster.
-	fmt.Printf("Fetching service '%s' in namespace '%s'...\n", serviceName, namespace)
-
-	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingressName, metav1.GetOptions{})
+	// Fetch all services in the cluster.
+	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
 
-
-	fmt.Println("Processing Ingress details...")
-	for _, rule := range ingress.Spec.Rules {
-		host := rule.Host
-		fmt.Printf("Ingress URL: %s\n", host)
-	}
-
-	// Display the URL from the Ingress configuration.
-	url := fmt.Sprintf("http://%s/model/allocation/compute?window=7d&aggregate=namespace&includeIdle=true&step=1d&accumulate=false", ingress.Spec.Rules[0].Host)
-	
-
-	// Check if the URL is reachable.
-	if err := checkURL(url); err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Println("URL is working fine.")
+	// Iterate through the services and print their external IPs and ports.
+	fmt.Println("Listing External IPs and Ports of Services:")
+	for _, svc := range services.Items {
+		if len(svc.Status.LoadBalancer.Ingress) > 0 {
+			for _, ingress := range svc.Status.LoadBalancer.Ingress {
+				for _, port := range svc.Spec.Ports {
+					fmt.Printf("%s -> %s:%d\n", svc.Name, ingress.IP, port.Port)
+				}
+			}
+		}
 	}
 
 	fmt.Println("Program finished successfully.")
