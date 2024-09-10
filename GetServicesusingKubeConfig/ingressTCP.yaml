@@ -1,0 +1,15 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: opencost-tcp-route
+  namespace: default
+spec:
+  entryPoints:
+    - web # or websecure if using HTTPS
+  routes:
+    - match: HostSNI(`*`) # Match all HostSNI for TCP traffic
+      services:
+        - name: opencost
+          port: 9003
+  tls:
+    passthrough: true # Enable TLS passthrough if you're using HTTPS
