@@ -27,9 +27,16 @@ func main() {
 	router := gin.Default()
 	router.Use(CORS())
 
-	router.GET("/allocation/compute", paramAllocationHandler)
+	router.GET("/ping", helloPing)
+	router.GET("model/allocation/compute", paramAllocationHandler)
 
 	router.Run(":8080")
+}
+
+func helloPing(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "pong",
+	})
 }
 
 func paramAllocationHandler(c *gin.Context) {
@@ -50,8 +57,9 @@ func paramAllocationHandler(c *gin.Context) {
 			"step":        step,
 			"accumulate":  accumulate,
 		}).
-		Get("http://localhost:9080/model/allocation/compute")
+		Get("http://206.189.246.89:9090/model/allocation/compute")
 
+		
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status": "error",
