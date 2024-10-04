@@ -28,8 +28,7 @@ custom3000:
   # The port protocol (TCP/UDP)
   protocol: TCP
 
-
-custom3000:
+custom9090:
   port: 9090
   expose:
     default: true
