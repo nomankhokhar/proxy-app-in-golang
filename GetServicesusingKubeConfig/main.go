@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+
 )
 
 var openCostIP string
@@ -42,6 +43,21 @@ func loadKubeConfigFromBytes(content []byte) (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
+func CORS() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-ClusterQueueLenght, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
+}
+
 // fetchServices fetches all services from the Kubernetes cluster and sets the openCostIP if found.
 func fetchServices(clientset *kubernetes.Clientset) error {
 	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
@@ -65,6 +81,7 @@ func fetchServices(clientset *kubernetes.Clientset) error {
 }
 
 func main() {
+	
 	// Get the kubeconfig file path from the command line argument.
 	kubeconfigPath := *flag.String("kubeconfig", "./nomanProxy.yaml", "absolute path to the kubeconfig file")
 	flag.Parse()
@@ -96,6 +113,7 @@ func main() {
 
 	// Setup Gin router
 	router := gin.Default()
+	router.Use(CORS())
 	router.GET("/model/allocation/compute", func(c *gin.Context) {
 		openCostEndPointHandler(c, openCostIP)
 	})
