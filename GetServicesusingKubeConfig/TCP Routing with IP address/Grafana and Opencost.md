@@ -52,12 +52,12 @@ metadata:
   namespace: default
 spec:
   entryPoints:
-    - custom3000 # Use the custom3000 entry point to route traffic on port 3000
+    - grafana # Use the custom3000 entry point to route traffic on port 3000
   routes:
-    - match: Host(`67.207.68.98`) # Replace with your public IP or domain
+    - match: Host(`138.68.119.114`) # Replace with your public IP or domain
       kind: Rule
       services:
-        - name: grafana
+        - name: gra-grafana
           port: 3000 # Internally route to Grafana service on port 3000
 ---
 apiVersion: traefik.io/v1alpha1
@@ -67,12 +67,12 @@ metadata:
   namespace: default
 spec:
   entryPoints:
-    - custom9090 # Use the custom9090 entry point to route traffic on port 9090
+    - opencost # Use the custom9090 entry point to route traffic on port 9090
   routes:
-    - match: Host(`67.207.68.98`) # Replace with your public IP or domain
+    - match: Host(`138.68.119.114`) # Replace with your public IP or domain
       kind: Rule
       services:
-        - name: opencost
+        - name: open-opencost
           port: 9090 # Internally route to Opencost service on port 9090
 ```
 
