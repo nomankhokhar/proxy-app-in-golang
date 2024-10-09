@@ -10,12 +10,11 @@ import (
 
 	"opencostProxy/controller"
 	model "opencostProxy/models"
-
 )
 
 func main() {
 	// Get the kubeconfig file path from the command line argument.
-	kubeconfigPath := *flag.String("kubeconfig", "./kubeConfig/nomanProxy.yaml", "absolute path to the kubeconfig file")
+	kubeconfigPath := *flag.String("kubeconfig", "./kubeConfig/kubeconfig.yaml", "absolute path to the kubeconfig file")
 	flag.Parse()
 
 	// Load kubeconfig
