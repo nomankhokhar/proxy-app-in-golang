@@ -69,7 +69,7 @@ spec:
   entryPoints:
     - opencost # Use the custom9090 entry point to route traffic on port 9090
   routes:
-    - match: Host(`138.68.119.114`) # Replace with your public IP or domain
+    - match: Host(`138.68.119.16`) # Replace with your public IP or domain
       kind: Rule
       services:
         - name: open-opencost
